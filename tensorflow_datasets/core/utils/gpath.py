@@ -124,13 +124,13 @@ class GPath(pathlib.PurePosixPath, type_utils.ReadWritePath):
     gfile = typing.cast(typing.IO[AnyStr], gfile)  # pytype: disable=invalid-typevar
     return gfile
 
-  def rename(self, target: type_utils.PathLike) -> None:
+  def rename(self, target: type_utils.PathLike) -> 'GPath':
     """Rename file or directory to the given target."""
     target = os.fspath(GPath(target))  # Normalize gs:// URI
     tf.io.gfile.rename(self._path_str, target)
     return GPath(target)
 
-  def replace(self, target: type_utils.PathLike) -> None:
+  def replace(self, target: type_utils.PathLike) -> 'GPath':
     """Replace file or directory to the given target."""
     target = os.fspath(GPath(target))  # Normalize gs:// URI
     tf.io.gfile.rename(self._path_str, target, overwrite=True)
