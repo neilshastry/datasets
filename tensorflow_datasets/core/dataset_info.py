@@ -48,6 +48,7 @@ from tensorflow_datasets.core.features import feature as feature_lib
 from tensorflow_datasets.core.features import top_level_feature
 from tensorflow_datasets.core.proto import dataset_info_pb2
 from tensorflow_datasets.core.utils import gcs_utils
+from tensorflow_datasets.core.utils import type_utils
 
 from google.protobuf import json_format
 
@@ -355,12 +356,15 @@ class DatasetInfo(object):
       dataset_info_dir: `str` The directory containing the metadata file. This
         should be the root directory of a specific dataset version.
     """
-    if not dataset_info_dir:
-      raise ValueError(
-          "Calling read_from_directory with undefined dataset_info_dir.")
     logging.info("Load dataset info from %s", dataset_info_dir)
 
     json_filename = self._dataset_info_path(dataset_info_dir)
+    if not tf.io.gfile.exists(json_filename):
+      raise ValueError(
+          "Try to load `DatasetInfo` from a directory which doesn't contain "
+          f"a dataset. Please delete the directory `{dataset_info_dir}`  if "
+          "you are trying to re-generate the dataset."
+      )
 
     # Load the metadata from disk
     parsed_proto = read_from_json(json_filename)
@@ -513,13 +517,11 @@ def get_dataset_feature_statistics(builder, split):
   return statistics.datasets[0], schema
 
 
-def read_from_json(json_filename):
+def read_from_json(path: type_utils.PathLike) -> dataset_info_pb2.DatasetInfo:
   """Read JSON-formatted proto into DatasetInfo proto."""
-  with tf.io.gfile.GFile(json_filename) as f:
-    dataset_info_json_str = f.read()
+  json_str = utils.as_path(path).read_text(encoding="UTF-8")
   # Parse it back into a proto.
-  parsed_proto = json_format.Parse(dataset_info_json_str,
-                                   dataset_info_pb2.DatasetInfo())
+  parsed_proto = json_format.Parse(json_str, dataset_info_pb2.DatasetInfo())
   return parsed_proto
 
 
